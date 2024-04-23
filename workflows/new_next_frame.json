@@ -27,7 +27,7 @@
   },
   "6": {
     "inputs": {
-      "text": "the first time I smoked weed, 30 years ago, past, boy, bong, low saturation",
+      "text": "cannabis, marjuana, leaf, plant, leaves",
       "clip": [
         "4",
         1
@@ -35,7 +35,7 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "prompt_to"
+      "title": "CLIP Text Encode (Prompt)"
     }
   },
   "7": {
@@ -82,7 +82,7 @@
   },
   "11": {
     "inputs": {
-      "conditioning_to_strength": 0.18,
+      "conditioning_to_strength": 0.51,
       "conditioning_to": [
         "6",
         0
@@ -99,7 +99,7 @@
   },
   "12": {
     "inputs": {
-      "text": "something else, frog, ferrari, low saturation",
+      "text": "cannabis, marjuana, leaf, plant, leaves",
       "clip": [
         "4",
         1
@@ -107,17 +107,17 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "prompt_from"
+      "title": "CLIP Text Encode (Prompt)"
     }
   },
   "14": {
     "inputs": {
-      "seed": 119727771484158,
-      "steps": 17,
-      "cfg": 7.45,
+      "seed": 1005768328748439,
+      "steps": 30,
+      "cfg": 7.9,
       "sampler_name": "euler",
       "scheduler": "normal",
-      "denoise": 0.9,
+      "denoise": 0.9500000000000001,
       "model": [
         "35",
         0
@@ -167,7 +167,7 @@
   },
   "21": {
     "inputs": {
-      "image": "first_frame_768x2_00087_.png",
+      "image": "first_frame_768x2_00131_.png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -177,32 +177,32 @@
   },
   "26": {
     "inputs": {
-      "value": 768
+      "n": 768
     },
-    "class_type": "Integer Variable [n-suite]",
+    "class_type": "YANC.IntegerCaster",
     "_meta": {
-      "title": "genSize"
+      "title": "Integer Caster"
     }
   },
   "29": {
     "inputs": {
-      "strength": 1,
+      "strength": 0.33,
       "start_percent": 0,
       "end_percent": 1,
       "positive": [
-        "11",
+        "72",
         0
       ],
       "negative": [
-        "7",
-        0
+        "72",
+        1
       ],
       "control_net": [
         "31",
         0
       ],
       "image": [
-        "44",
+        "66",
         0
       ]
     },
@@ -222,8 +222,8 @@
   },
   "35": {
     "inputs": {
-      "weight_style": 1,
-      "weight_composition": 1,
+      "weight_style": 0.33,
+      "weight_composition": 0.33,
       "expand_style": false,
       "combine_embeds": "average",
       "start_at": 0,
@@ -238,11 +238,11 @@
         0
       ],
       "image_style": [
-        "41",
+        "73",
         0
       ],
       "image_composition": [
-        "41",
+        "73",
         0
       ],
       "clip_vision": [
@@ -296,27 +296,10 @@
       "title": "Image Resize And Crop Node"
     }
   },
-  "44": {
-    "inputs": {
-      "ckpt_name": "depth_anything_vitl14.pth",
-      "resolution": [
-        "26",
-        0
-      ],
-      "image": [
-        "41",
-        0
-      ]
-    },
-    "class_type": "DepthAnythingPreprocessor",
-    "_meta": {
-      "title": "Depth Anything"
-    }
-  },
   "45": {
     "inputs": {
       "images": [
-        "44",
+        "66",
         0
       ]
     },
@@ -328,7 +311,7 @@
   "46": {
     "inputs": {
       "images": [
-        "21",
+        "41",
         0
       ]
     },
@@ -340,7 +323,7 @@
   "51": {
     "inputs": {
       "pixels": [
-        "41",
+        "73",
         0
       ],
       "vae": [
@@ -370,32 +353,117 @@
       "title": "LatentInterpolate"
     }
   },
-  "59": {
+  "61": {
     "inputs": {
-      "samples": [
-        "54",
+      "low_threshold": 0.4,
+      "high_threshold": 0.8,
+      "image": [
+        "41",
         0
-      ],
-      "vae": [
-        "4",
-        2
       ]
     },
-    "class_type": "VAEDecode",
+    "class_type": "Canny",
     "_meta": {
-      "title": "VAE Decode"
+      "title": "Canny"
     }
   },
-  "60": {
+  "66": {
+    "inputs": {
+      "image": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "ImageInvert",
+    "_meta": {
+      "title": "Invert Image"
+    }
+  },
+  "67": {
+    "inputs": {
+      "control_net_name": "control-lora-depth-rank128.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "71": {
     "inputs": {
       "images": [
-        "59",
+        "75",
         0
       ]
     },
     "class_type": "PreviewImage",
     "_meta": {
       "title": "Preview Image"
+    }
+  },
+  "72": {
+    "inputs": {
+      "strength": 0.5,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "11",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "control_net": [
+        "67",
+        0
+      ],
+      "image": [
+        "75",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet (Advanced)"
+    }
+  },
+  "73": {
+    "inputs": {
+      "factor": 0.6,
+      "image": [
+        "41",
+        0
+      ]
+    },
+    "class_type": "ImageDesaturate+",
+    "_meta": {
+      "title": "🔧 Image Desaturate"
+    }
+  },
+  "74": {
+    "inputs": {
+      "images": [
+        "73",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "75": {
+    "inputs": {
+      "ckpt_name": "depth_anything_vitl14.pth",
+      "resolution": 512,
+      "image": [
+        "41",
+        0
+      ]
+    },
+    "class_type": "DepthAnythingPreprocessor",
+    "_meta": {
+      "title": "Depth Anything"
     }
   }
 }

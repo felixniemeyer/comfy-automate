@@ -6,11 +6,9 @@ import random
 
 from PIL import Image 
 
-from flythrough import flythrough
-
 from common import queue_prompt
 
-workflow_file = "next_frame_gen.json"
+workflow_file = "workflows/new_next_frame.json"
 
 ckpt = "sd_xl_base_1.0.safetensors"
 
@@ -23,20 +21,26 @@ output_folder_name = "frame_by_frame"
 model_out_size = 768
 
 prompt_texts = [
-    ["the first time I smoked weed, 30 years ago, past, boy, bong", 0], 
-    ["the first time I smoked weed, 30 years ago, past, boy, bong", 15], 
-    ["smoke weed, table, third person experience, camera above, group of people, chairs", 30], 
-    ["munchies, bread, biscuits, cheese", 35], 
-    ["sun set, hight, darkness falling, bike, ride street", 45],
-    ["garden gate, night, scar on leg, injury", 50],
-    ["garden gate, trainer stuck in a buckled gate, day, sun", 60],
-    ["weed as a lifelong friend, companion", 70],
-    ["weed as a lifelong friend, companion", 75],
+    ["the first time I smoked weed, 30 years ago, boy, bong", 0], 
+    ["bong, smoke, weed", 14], 
+    ["bong, smoke, table, third person experience, people, group of people, chairs", 30], 
+    ["food, bread, biscuits, cheese, eating", 34], 
+    ["night, darkness falling, bicycle, ride, street, forest", 44],
+    ["night, garden gate, crash, scar on leg, injury", 40],
+    ["garden gate, sneaker, trainer lost, buckled garden gate, next day, sun", 60],
+    ["weed, 420, lifelong friend, companion", 70],
+    ["weed, 420, lifelong friend, companion", 74],
 ]
 
-fps = 30
+# reverse
+prompt_texts = prompt_texts[::-1]
+for i in range(len(prompt_texts)):
+    prompt_texts[i][1] = 74 - prompt_texts[i][1]
 
-prompt_addidion = ", aesthetic, cannabis, weed"
+fps = 7.5
+
+prompt_prefix = "cannabis, marjuana, cannabis leaf, hemp plant"
+prompt_postfix = "photography, photorealistic"
 
 # ensure the output_folder is empty and exists
 answer = None
@@ -77,26 +81,48 @@ with open(workflow_file) as f:
     for node_id in workflow:
         node = workflow[node_id]
         class_type = node["class_type"]
-        title = node["_meta"]["title"]
         if class_type == "CheckpointLoaderSimple":
             ckpt_loader = node
         if class_type == "LoadImage":
             image_loader = node
-        if title == "prompt_from":
-            prompt_from = node
-        if title == "prompt_to":
-            prompt_to = node
         if class_type == "ConditioningAverage":
             conditioning_average = node
-        if title == "genSize":
+            from_node_id = conditioning_average["inputs"]["conditioning_from"][0]
+            print(from_node_id)
+            to_node_id = conditioning_average["inputs"]["conditioning_to"][0]
+            print(to_node_id)
+            prompt_from = workflow[from_node_id]
+            prompt_to = workflow[to_node_id]
+        if class_type == "YANC.IntegerCaster":
             gen_size = node
         if class_type == "SaveImage":
             save_image = node
         if class_type == "KSampler": 
             k_sampler = node
 
-if ckpt_loader == None or image_loader == None or prompt_from == None or prompt_to == None or conditioning_average == None or gen_size == None:
-    print("Could not find all nodes in workflow", workflow_file)
+if ckpt_loader == None:
+    print("Could not find CheckpointLoaderSimple in workflow", workflow_file)
+    exit()
+if save_image == None:
+    print("Could not find SaveImage in workflow", workflow_file)
+    exit()
+if k_sampler == None:
+    print("Could not find KSampler in workflow", workflow_file)
+    exit()
+if conditioning_average == None:
+    print("Could not find ConditioningAverage in workflow", workflow_file)
+    exit()
+if gen_size == None:
+    print("Could not find EmptyLatentImage in workflow", workflow_file)
+    exit()
+if image_loader == None: 
+    print("Could not find LoadImage in workflow", workflow_file)
+    exit()
+if prompt_from == None: 
+    print("Could not find prompt_from in workflow", workflow_file)
+    exit()
+if prompt_to == None:
+    print("Could not find prompt_to in workflow", workflow_file)
     exit()
 
 ckpt_loader["inputs"]["ckpt_name"] = ckpt
@@ -105,8 +131,8 @@ gen_size["inputs"]["value"] = model_out_size
 save_image["inputs"]["filename_prefix"] = output_folder_name + '/f'
 
 def setPrompts(from_p, to_p):
-    prompt_from["inputs"]["text"] = from_p + prompt_addidion
-    prompt_to["inputs"]["text"] = to_p + prompt_addidion
+    prompt_from["inputs"]["text"] = from_p + prompt_prefix
+    prompt_to["inputs"]["text"] = to_p + prompt_prefix
 
 def setProgress(progress):
     conditioning_average["inputs"]["conditioning_to_strength"] = progress
@@ -129,7 +155,7 @@ for prompt_index in range(num_prompts - 1):
     prompt_text_to = prompt_texts[prompt_index + 1]
     pf = prompt_text_from[0]
     pt = prompt_text_to[0]
-    steps = (prompt_text_to[1] - prompt_text_from[1]) * fps
+    steps = int((prompt_text_to[1] - prompt_text_from[1]) * fps)
 
     setPrompts(pf, pt)
 
@@ -148,17 +174,6 @@ for prompt_index in range(num_prompts - 1):
             upscale_out_size - crop_border_px, 
             upscale_out_size - crop_border_px
         ))
-        # desaturate 50%
-        for x in range(image.width):
-            for y in range(image.height):
-                # avg brightness
-                rgb = image.getpixel((x, y))
-                brightness = sum(rgb) / 3
-                image.putpixel((x, y), (
-                    int(rgb[0] * 0.5 + brightness * 0.5),
-                    int(rgb[1] * 0.5 + brightness * 0.5),
-                    int(rgb[2] * 0.5 + brightness * 0.5)
-                ))
 
         # save
         image.save(os.path.join(comfy_input_path, "previous_frame.png"))

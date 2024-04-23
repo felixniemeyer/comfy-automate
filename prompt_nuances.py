@@ -1,24 +1,25 @@
 import math
 
-import json
-from urllib import request, parse
 import random
 
-from prompt_interpolation import prompt_fade
+from common import queue_prompt
 
-def queue_prompt(prompt):
-    p = f'{{"prompt": {prompt}}}'
-    req =  request.Request("http://localhost:8188/prompt", data=p.encode('utf-8'), method='POST')
-    request.urlopen(req).read()
+from prompt_interpolation_workflow import PromptInterpolationWorkflow
+
 
 prompt_texts = [
-    "cannabis plant",
-    "cannabis leaves",
-    "one cannabis leaf",
-    "cannabis joint",
+    "hemp, cannabis plant",
+    "cannabis leaves, harvested leaves",
+    "cannabis joint, marjuana",
 ]
 
 num_prompts = len(prompt_texts)
+
+workflow = PromptInterpolationWorkflow()
+workflow.set_ckpt("sd_xl_base_1.0.safetensors")
+workflow.set_gen_size(768)
+workflow.set_output_folder("smoke3")
+workflow.set_seed(random.randint(0, 1000000))
 
 steps = 40
 
@@ -29,14 +30,14 @@ for prompt_index in range(num_prompts):
     print(f"Interpolating between {prompt_from} and {prompt_to}")
 
     for step in range(steps):
-        smoke_amount = (1 - math.cos(2 * math.pi * step / steps)) / 2 * 2
+        smoke_amount = (1 - math.cos(2 * math.pi * step / steps)) / 2
         smoke_postfix = f", (smoke: {smoke_amount})"
         print(f"Step {step} of {steps}. {smoke_postfix}")
-        prompt = prompt_fade.substitute(
-            prompt_from=prompt_from + smoke_postfix,
-            prompt_to=prompt_to + smoke_postfix,
-            progress=step / steps, 
-            output_prefix="smoke/i"
+        workflow.set_prompts(
+            prompt_from + smoke_postfix,
+            prompt_to + smoke_postfix,
         )
-        queue_prompt(prompt)
+        print(f"prompt_from {prompt_from + smoke_postfix} -> prompt_to {prompt_to + smoke_postfix}")
+        workflow.set_progress(step / steps)
+        queue_prompt(workflow.get_json())
 

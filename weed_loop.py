@@ -6,8 +6,7 @@ import random
 
 from PIL import Image 
 
-from flythrough import flythrough
-
+from prompt_interpolation_workflow import PromptInterpolationWorkflow
 from common import queue_prompt
 
 ckpt = "sd_xl_base_1.0.safetensors"
@@ -20,19 +19,22 @@ output_folder_name = "weed_loop"
 
 model_out_size = 768
 
+
+# 32 fps
+# 13 sekunden pro block
+# 4 wiederholungen
 prompt_texts = [
     ["marjuana, cannabis leaves, joint, tip, stoner", 3],
-    ["countries, airplane, airport, weed", 3], 
-    ["festival, joint, marjuana", 3], 
-    ["fines, police, airport, drug smuggling", 3], 
+    ["weed, travelling, countries, airplane", 3], 
+    ["festival, joint, blunt, marjuana", 3], 
+    ["fines, cash, police, airport", 4], 
 ]
 
-prompt_prefix = "travelling, cannabis, marjuana, airplane, airport"
+prompt_prefix = "cannabis leaf, hemp plant, marjuana, "
 
-factor = 3
+fps = 32
 for prompt_text in prompt_texts:
-    prompt_text[1] = prompt_text[1] * factor
-
+    prompt_text[1] = prompt_text[1] * fps
 
 # ensure the output_folder is empty and exists
 answer = None
@@ -58,9 +60,24 @@ if postfix > 1:
     output_folder_name = output_folder_name + str(postfix)
 
 print("writing to", absolute_output_folder)
-
 if not os.path.exists(absolute_output_folder):
     os.makedirs(absolute_output_folder)
+
+workflow = PromptInterpolationWorkflow()
+workflow.set_output_folder(output_folder_name)
+workflow.set_gen_size(model_out_size)
+workflow.set_ckpt(ckpt)
+seed = random.randint(0, 10000000000)
+seed = 4089594200 # override with a good one
+print(f"Seed: {seed}")
+workflow.set_seed(seed)
+# write seed to absolute_output_folder
+workflow.set_seed(4089594200)
+
+with open(os.path.join(absolute_output_folder, "seed.txt"), "w") as f:
+    f.write(str(seed))
+
+
 
 previous_generation = "first_frame.png"
 
@@ -72,6 +89,8 @@ for prompt_index in range(num_prompts):
     prompt_from = prompt_texts[prompt_index][0]
     prompt_to = prompt_texts[(prompt_index + 1) % num_prompts][0]
     steps = prompt_texts[prompt_index][1]
+
+    workflow.set_prompts(prompt_prefix + prompt_from, prompt_prefix + prompt_to)
 
     print(f"Interpolating between {prompt_from} and {prompt_to} in {steps} steps")
 
@@ -89,27 +108,23 @@ for prompt_index in range(num_prompts):
         # count number of files in output folder
         files_before = os.listdir(absolute_output_folder)
 
-        print(f"Step {step} of {steps}")
-        prompt = flythrough.substitute(
-            ckpt_name=ckpt,
-            size=model_out_size,
-            previous_frame="previous_frame.png",
-            prompt_from=prompt_from,
-            prompt_to=prompt_to,
-            progress=step / steps, 
-            output_folder=output_folder_name, 
-            control_strength=1,
-            style_weight=0,
-            composition_weight=0,
-        )
-        queue_prompt(prompt)
+        print(f"Step {step + 1} of {steps}")
+        workflow.set_progress(step / steps)
 
+        workflow_json = workflow.get_json()
+        # write to file as debug
+        with open("temp_recent_workflow.json", "w") as f:
+            f.write(workflow_json)
+        queue_prompt(workflow_json)
+
+        print("waiting for comfy to finish")
         # wait until a file appears in comy output folder
         files_after = []
         while len(files_after) <= len(files_before):
             time.sleep(0.1)
             files_after = os.listdir(absolute_output_folder)
 
+        print("comfy finished")
         # find the new file
         new_file = None
         for file in files_after:
@@ -117,15 +132,6 @@ for prompt_index in range(num_prompts):
                 previous_generation = os.path.join(absolute_output_folder, file)
                 break
 
-        time.sleep(1.5) # wait for file to be written to disk
 
-#         file_size = os.path.getsize(previous_generation)
-#         new_size = 0 
-#         # ensure file is not being written to
-#         while new_size != file_size:
-#             print(f"Waiting for file to be written to: {previous_generation}")
-#             time.sleep(0.1)
-#             new_size = os.path.getsize(previous_generation)
-# 
-        
+        time.sleep(1.5) 
 

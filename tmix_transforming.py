@@ -9,7 +9,7 @@ from PIL import Image
 weights = np.array([0.1, 0.2, 0.4, 0.2, 0.1])
 
 comfy_path = os.path.expanduser('~/work/ai/ComfyUI')
-folder = "frame_by_frame13"
+folder = "frame_by_frame18"
 folder_path = os.path.join(comfy_path, 'output', folder)
 
 out_folder = os.path.join(comfy_path, 'output', folder + "_interpolated")

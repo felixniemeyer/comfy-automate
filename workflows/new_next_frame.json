@@ -1,7 +1,7 @@
 {
   "4": {
     "inputs": {
-      "ckpt_name": "sd_xl_base_1.0.safetensors"
+      "ckpt_name": "acornIsBoningXL_v10.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -27,7 +27,7 @@
   },
   "6": {
     "inputs": {
-      "text": "cannabis, marjuana, leaf, plant, leaves",
+      "text": "(pussy closeup:2.45), creampie, dick slip out, cum, drooling creampie",
       "clip": [
         "4",
         1
@@ -40,7 +40,7 @@
   },
   "7": {
     "inputs": {
-      "text": "text, letters, watermark, missing limbs, extra limbs, cartoon",
+      "text": "text, letters, watermark, missing limbs, extra limbs, deformed limbs, CGI, cartoon, blurred, ugly, fat, gross, arab, pubic hair, anal, black",
       "clip": [
         "4",
         1
@@ -82,7 +82,7 @@
   },
   "11": {
     "inputs": {
-      "conditioning_to_strength": 0.51,
+      "conditioning_to_strength": 0.73,
       "conditioning_to": [
         "6",
         0
@@ -99,7 +99,7 @@
   },
   "12": {
     "inputs": {
-      "text": "cannabis, marjuana, leaf, plant, leaves",
+      "text": "janice griffith, deep inside, natural light, penis deep inside, penis fully in pussy, penis all the way in the pussy, vaginal sex, (pussy closeup:1.45), creampie, dick slip out",
       "clip": [
         "4",
         1
@@ -112,12 +112,12 @@
   },
   "14": {
     "inputs": {
-      "seed": 1005768328748439,
+      "seed": 1044795937800865,
       "steps": 30,
-      "cfg": 7.9,
+      "cfg": 7.66,
       "sampler_name": "euler",
       "scheduler": "normal",
-      "denoise": 0.9500000000000001,
+      "denoise": 1,
       "model": [
         "35",
         0
@@ -167,7 +167,7 @@
   },
   "21": {
     "inputs": {
-      "image": "first_frame_768x2_00131_.png",
+      "image": "first_frame_768x2_00288_.png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -222,8 +222,8 @@
   },
   "35": {
     "inputs": {
-      "weight_style": 0.33,
-      "weight_composition": 0.33,
+      "weight_style": 0.5,
+      "weight_composition": 0.65,
       "expand_style": false,
       "combine_embeds": "average",
       "start_at": 0,
@@ -238,11 +238,11 @@
         0
       ],
       "image_style": [
-        "73",
+        "77",
         0
       ],
       "image_composition": [
-        "73",
+        "77",
         0
       ],
       "clip_vision": [
@@ -308,22 +308,10 @@
       "title": "Preview Image"
     }
   },
-  "46": {
-    "inputs": {
-      "images": [
-        "41",
-        0
-      ]
-    },
-    "class_type": "PreviewImage",
-    "_meta": {
-      "title": "Preview Image"
-    }
-  },
   "51": {
     "inputs": {
       "pixels": [
-        "73",
+        "77",
         0
       ],
       "vae": [
@@ -355,8 +343,8 @@
   },
   "61": {
     "inputs": {
-      "low_threshold": 0.4,
-      "high_threshold": 0.8,
+      "low_threshold": 0.33,
+      "high_threshold": 0.66,
       "image": [
         "41",
         0
@@ -427,23 +415,10 @@
       "title": "Apply ControlNet (Advanced)"
     }
   },
-  "73": {
-    "inputs": {
-      "factor": 0.6,
-      "image": [
-        "41",
-        0
-      ]
-    },
-    "class_type": "ImageDesaturate+",
-    "_meta": {
-      "title": "🔧 Image Desaturate"
-    }
-  },
   "74": {
     "inputs": {
       "images": [
-        "73",
+        "77",
         0
       ]
     },
@@ -464,6 +439,38 @@
     "class_type": "DepthAnythingPreprocessor",
     "_meta": {
       "title": "Depth Anything"
+    }
+  },
+  "77": {
+    "inputs": {
+      "clamp": true,
+      "gamma": 1,
+      "contrast": 0.8,
+      "exposure": -0.1,
+      "offset": 0.05,
+      "hue": 0,
+      "saturation": 0.6900000000000001,
+      "value": 1,
+      "image": [
+        "41",
+        0
+      ]
+    },
+    "class_type": "Color Correct (mtb)",
+    "_meta": {
+      "title": "Color Correct (mtb)"
+    }
+  },
+  "81": {
+    "inputs": {
+      "images": [
+        "21",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
     }
   }
 }

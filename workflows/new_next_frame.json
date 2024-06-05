@@ -27,7 +27,7 @@
   },
   "6": {
     "inputs": {
-      "text": "(pussy closeup:2.45), creampie, dick slip out, cum, drooling creampie",
+      "text": "apple",
       "clip": [
         "4",
         1
@@ -40,7 +40,7 @@
   },
   "7": {
     "inputs": {
-      "text": "text, letters, watermark, missing limbs, extra limbs, deformed limbs, CGI, cartoon, blurred, ugly, fat, gross, arab, pubic hair, anal, black",
+      "text": "pear",
       "clip": [
         "4",
         1
@@ -71,7 +71,7 @@
     "inputs": {
       "filename_prefix": "first_frame_768x2",
       "images": [
-        "16",
+        "8",
         0
       ]
     },
@@ -82,7 +82,7 @@
   },
   "11": {
     "inputs": {
-      "conditioning_to_strength": 0.73,
+      "conditioning_to_strength": 1,
       "conditioning_to": [
         "6",
         0
@@ -99,7 +99,7 @@
   },
   "12": {
     "inputs": {
-      "text": "janice griffith, deep inside, natural light, penis deep inside, penis fully in pussy, penis all the way in the pussy, vaginal sex, (pussy closeup:1.45), creampie, dick slip out",
+      "text": "pear",
       "clip": [
         "4",
         1
@@ -112,9 +112,9 @@
   },
   "14": {
     "inputs": {
-      "seed": 1044795937800865,
-      "steps": 30,
-      "cfg": 7.66,
+      "seed": 423096650139958,
+      "steps": 35,
+      "cfg": 7.96,
       "sampler_name": "euler",
       "scheduler": "normal",
       "denoise": 1,
@@ -149,25 +149,9 @@
       "title": "Load Upscale Model"
     }
   },
-  "16": {
-    "inputs": {
-      "upscale_model": [
-        "15",
-        0
-      ],
-      "image": [
-        "8",
-        0
-      ]
-    },
-    "class_type": "ImageUpscaleWithModel",
-    "_meta": {
-      "title": "Upscale Image (using Model)"
-    }
-  },
   "21": {
     "inputs": {
-      "image": "first_frame_768x2_00288_.png",
+      "image": "first_frame_768x2_00258_.png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -186,7 +170,7 @@
   },
   "29": {
     "inputs": {
-      "strength": 0.33,
+      "strength": 0.3,
       "start_percent": 0,
       "end_percent": 1,
       "positive": [
@@ -222,8 +206,8 @@
   },
   "35": {
     "inputs": {
-      "weight_style": 0.5,
-      "weight_composition": 0.65,
+      "weight_style": 0.3,
+      "weight_composition": 0.4,
       "expand_style": false,
       "combine_embeds": "average",
       "start_at": 0,
@@ -326,7 +310,7 @@
   },
   "54": {
     "inputs": {
-      "ratio": 0,
+      "ratio": 0.35000000000000003,
       "samples1": [
         "5",
         0
@@ -390,7 +374,7 @@
   },
   "72": {
     "inputs": {
-      "strength": 0.5,
+      "strength": 0.4,
       "start_percent": 0,
       "end_percent": 1,
       "positive": [
@@ -398,7 +382,7 @@
         0
       ],
       "negative": [
-        "7",
+        "82",
         0
       ],
       "control_net": [
@@ -449,7 +433,7 @@
       "exposure": -0.1,
       "offset": 0.05,
       "hue": 0,
-      "saturation": 0.6900000000000001,
+      "saturation": 0.75,
       "value": 1,
       "image": [
         "41",
@@ -471,6 +455,36 @@
     "class_type": "PreviewImage",
     "_meta": {
       "title": "Preview Image"
+    }
+  },
+  "82": {
+    "inputs": {
+      "conditioning_to_strength": 1,
+      "conditioning_to": [
+        "7",
+        0
+      ],
+      "conditioning_from": [
+        "83",
+        0
+      ]
+    },
+    "class_type": "ConditioningAverage",
+    "_meta": {
+      "title": "ConditioningAverage"
+    }
+  },
+  "83": {
+    "inputs": {
+      "text": "apple",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
     }
   }
 }

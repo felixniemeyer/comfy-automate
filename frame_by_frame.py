@@ -11,7 +11,9 @@ from PIL import Image
 from common import queue_prompt
 
 def run(
-    output_folder_name, prompt_texts, fps, prompt_prefix, prompt_postfix, 
+    output_folder_name, prompt_texts, fps, 
+    prompt_prefix, prompt_postfix, 
+    neg_prompt_prefix, neg_prompt_postfix,
     ckpt=None, 
     initial_image_path= "grey.png", 
     resolution=768, 
@@ -31,7 +33,7 @@ def run(
     while os.path.exists(absolute_output_folder):
         # promt the user to delete the folder
         if answer == None: 
-            answer = input(f"Folder {absolute_output_folder} already exists. (i)ncrement, (d)elete, (q)uit? Default is increment.")
+            answer = 'i' # input(f"Folder {absolute_output_folder} already exists. (i)ncrement, (d)elete, (q)uit? Default is increment.")
         if answer.lower() == 'y':
             # go through all files in the folder and delete them
             for file in os.listdir(absolute_output_folder):
@@ -41,6 +43,7 @@ def run(
             print("Exiting")
             exit()
         else:
+            print("Incrementing output folder name")
             postfix += 1
             absolute_output_folder = os.path.join(comfy_output_path, output_folder_name + str(postfix)) 
 
@@ -54,7 +57,11 @@ def run(
     image_loader = None
     prompt_from_node = None
     prompt_to_node = None
-    conditioning_average = None
+    # TBD: negative_prompts interpolation
+    neg_prompt_from_node = None
+    neg_prompt_to_node = None
+    conditioning_positive = None
+    conditioning_negative = None
     gen_size = None
     k_sampler = None
     with open(workflow_file) as f:
@@ -67,20 +74,22 @@ def run(
                 ckpt_loader = node
             if class_type == "LoadImage":
                 image_loader = node
-            if class_type == "ConditioningAverage":
-                conditioning_average = node
-                from_node_id = conditioning_average["inputs"]["conditioning_from"][0]
-                print(from_node_id)
-                to_node_id = conditioning_average["inputs"]["conditioning_to"][0]
-                print(to_node_id)
-                prompt_from_node = workflow[from_node_id]
-                prompt_to_node = workflow[to_node_id]
             if class_type == "YANC.IntegerCaster":
                 gen_size = node
             if class_type == "SaveImage":
                 save_image = node
             if class_type == "KSampler": 
                 k_sampler = node
+                control_net_node = workflow[k_sampler["inputs"]["positive"][0]]
+                control_net_node = workflow[control_net_node["inputs"]["positive"][0]]
+                conditioning_positive = workflow[control_net_node["inputs"]["positive"][0]]
+                conditioning_negative = workflow[control_net_node["inputs"]["negative"][0]]
+
+                prompt_from_node = workflow[conditioning_positive["inputs"]["conditioning_from"][0]]
+                prompt_to_node = to_node_id = workflow[conditioning_positive["inputs"]["conditioning_to"][0]]
+
+                neg_prompt_from_node = workflow[conditioning_negative["inputs"]["conditioning_from"][0]]
+                neg_prompt_to_node = to_node_id = workflow[conditioning_negative["inputs"]["conditioning_to"][0]]
 
     if ckpt_loader == None:
         print("Could not find CheckpointLoaderSimple in workflow", workflow_file)
@@ -91,7 +100,10 @@ def run(
     if k_sampler == None:
         print("Could not find KSampler in workflow", workflow_file)
         exit()
-    if conditioning_average == None:
+    if conditioning_positive == None:
+        print("Could not find ConditioningAverage in workflow", workflow_file)
+        exit()
+    if conditioning_negative == None:
         print("Could not find ConditioningAverage in workflow", workflow_file)
         exit()
     if gen_size == None:
@@ -106,6 +118,12 @@ def run(
     if prompt_to_node == None:
         print("Could not find prompt_to in workflow", workflow_file)
         exit()
+    if neg_prompt_from_node == None:
+        print("Could not find neg_prompt_from in workflow", workflow_file)
+        exit()
+    if neg_prompt_to_node == None:
+        print("Could not find neg_prompt_to in workflow", workflow_file)
+        exit()
 
     if(ckpt != None):
         ckpt_loader["inputs"]["ckpt_name"] = ckpt
@@ -113,24 +131,23 @@ def run(
     gen_size["inputs"]["value"] = resolution
     save_image["inputs"]["filename_prefix"] = output_folder_name + '/f'
 
-    def setPrompts(from_p, to_p, total_steps=0):
-        # sine
-        prog = math.sin(total_steps / (fps * 4) * math.pi * 2) * 0.5 + 0.5
-        inserted = max(0, prog - 0.33) * 3/2
-        retracted = max(0, 0.66 - prog) * 3/2
-        #to string max 2 decimals
-        inserted = "{:.2f}".format(inserted)
-        retracted = "{:.2f}".format(retracted)
-        wave = "" # f", (bodies close:{inserted}), (penis fully absorbed:{inserted}), (deep inside:{inserted}), (bodies apart:{retracted}), (penis fully inserted:{inserted}), (bodies pressing against each other:{inserted}), (ass touching:{inserted}), (balls touching:{inserted}), (moaning: {inserted}), (pleading:{retracted}), (penis retracted:{retracted}), (squirting:{retracted}), (dick slip out: {retracted}), (pussy hole: {retracted}), (exposed pussy:{retracted}), (dick pull out:{retracted}), (dick before vagina: {retracted}), "
-        prompt_from = prompt_prefix + from_p + wave + prompt_postfix
-        prompt_to = prompt_prefix + to_p + wave + prompt_postfix
+    def setPrompts(from_p, to_p, negfp, negtp, total_steps=0):
+        prompt_from = prompt_prefix + from_p + prompt_postfix
+        prompt_to = prompt_prefix + to_p + prompt_postfix
         prompt_from_node["inputs"]["text"] = prompt_from
         prompt_to_node["inputs"]["text"] = prompt_to
+
+        neg_prompt_from = neg_prompt_prefix + negfp + neg_prompt_postfix
+        neg_prompt_to = neg_prompt_prefix + negtp + neg_prompt_postfix
+
         print("prompt_from", prompt_from)
+        print("neg prompt_from", neg_prompt_from)
         print("prompt_to", prompt_to)
+        print("neg prompt_to", neg_prompt_to)
 
     def setProgress(progress):
-        conditioning_average["inputs"]["conditioning_to_strength"] = progress
+        conditioning_positive["inputs"]["conditioning_to_strength"] = progress
+        conditioning_negative["inputs"]["conditioning_to_strength"] = progress
 
     def setSeed(seed):
         k_sampler["inputs"]["seed"] = seed
@@ -150,8 +167,10 @@ def run(
     for prompt_index in range(num_prompts - 1):
         prompt_text_from = prompt_texts[prompt_index]
         prompt_text_to = prompt_texts[prompt_index + 1]
-        pf = prompt_text_from[0]
-        pt = prompt_text_to[0]
+        pf = prompt_text_from[0][0]
+        pt = prompt_text_to[0][0]
+        npf = prompt_text_from[0][1]
+        npt = prompt_text_to[0][1]
         steps = int((prompt_text_to[1] - prompt_text_from[1]) * fps)
 
 
@@ -160,19 +179,19 @@ def run(
         for step in range(steps):
 
 
-            setPrompts(pf, pt, total_steps)
+            setPrompts(pf, pt, npf, npt, total_steps)
 
             # load previous_generation image
             image = Image.open(previous_generation)
             # zoom in 1 % and rotate 1 degree
             # image = image.rotate(rotation_amount)
-            crop_border_px = 1
-            image = image.crop((
-                crop_border_px, 
-                crop_border_px, 
-                upscale_out_size - crop_border_px, 
-                upscale_out_size - crop_border_px
-            ))
+            # crop_border_px = 1
+            # image = image.crop((
+            #     crop_border_px, 
+            #     crop_border_px, 
+            #     upscale_out_size - crop_border_px, 
+            #     upscale_out_size - crop_border_px
+            # ))
 
             # save
             image.save(os.path.join(comfy_input_path, "previous_frame.png"))

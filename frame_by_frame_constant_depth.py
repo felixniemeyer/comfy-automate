@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 
 import math
@@ -17,7 +18,9 @@ def run(
     ckpt=None, 
     initial_image_path= "grey.png", 
     resolution=768, 
-    zoom_amount = 0.01, 
+    first_frame_ip_weight = 0, 
+    first_frame_canny_strength = 0,
+    first_frame_cfg = 7, 
     rotation_amount = 0
     ): 
     workflow_file = "workflows/next_frame_const_depth.json"
@@ -64,6 +67,12 @@ def run(
     conditioning_negative = None
     gen_size = None
     k_sampler = None
+    canny_control_net_node = None
+
+    original_ip_weight = None
+    original_canny_strength = None
+    original_cfg = None
+
     with open(workflow_file) as f:
         workflow = json.load(f)
         # find CheckpointLoaderSimple in node dictionary
@@ -81,8 +90,15 @@ def run(
                 save_image = node
             if class_type == "KSampler": 
                 k_sampler = node
-                control_net_node = workflow[k_sampler["inputs"]["positive"][0]]
-                control_net_node = workflow[control_net_node["inputs"]["positive"][0]]
+                original_cfg = k_sampler["inputs"]["cfg"]
+                k_sampler["inputs"]["cfg"] = first_frame_cfg
+
+                canny_control_net_node = workflow[k_sampler["inputs"]["positive"][0]]
+                original_canny_strength = canny_control_net_node["inputs"]["strength"]
+                canny_control_net_node["inputs"]["strength"] = 0
+
+                # had 2 control nets, now just one xxx switched back to 2 (including canny)
+                control_net_node = workflow[canny_control_net_node["inputs"]["positive"][0]] 
                 conditioning_positive = workflow[control_net_node["inputs"]["positive"][0]]
                 conditioning_negative = workflow[control_net_node["inputs"]["negative"][0]]
 
@@ -91,6 +107,10 @@ def run(
 
                 neg_prompt_from_node = workflow[conditioning_negative["inputs"]["conditioning_from"][0]]
                 neg_prompt_to_node = to_node_id = workflow[conditioning_negative["inputs"]["conditioning_to"][0]]
+            if class_type == "IPAdapterAdvanced":
+                ip_adapter = node
+                original_ip_weight = ip_adapter["inputs"]["weight"]
+                ip_adapter["inputs"]["weight"] = first_frame_ip_weight
 
     if ckpt_loader == None:
         print("Could not find CheckpointLoaderSimple in workflow", workflow_file)
@@ -124,6 +144,12 @@ def run(
         exit()
     if neg_prompt_to_node == None:
         print("Could not find neg_prompt_to in workflow", workflow_file)
+        exit()
+    if ip_adapter == None:
+        print("Could not find IPAdapterAdvanced in workflow", workflow_file)
+        exit()
+    if canny_control_net_node == None:
+        print("Could not find CannyControlNet in workflow", workflow_file)
         exit()
 
     if(ckpt != None):
@@ -161,8 +187,6 @@ def run(
 
     num_prompts = len(prompt_texts)
 
-    upscale_out_size = resolution * 2
-
     total_steps = 0
 
     for prompt_index in range(num_prompts - 1):
@@ -182,20 +206,9 @@ def run(
 
             setPrompts(pf, pt, npf, npt, total_steps)
 
-            # load previous_generation image
-            image = Image.open(previous_generation)
-            # zoom in 1 % and rotate 1 degree
-            # image = image.rotate(rotation_amount)
-            crop_border_px = 1
-            image = image.crop((
-                crop_border_px, 
-                crop_border_px, 
-                upscale_out_size - crop_border_px, 
-                upscale_out_size - crop_border_px
-            ))
-
-            # save
-            image.save(os.path.join(comfy_input_path, "previous_frame.png"))
+            # copy previous generation to comfy input folder
+            prev_frame_path = os.path.join(comfy_input_path, "previous_frame.png")
+            shutil.copy(previous_generation, prev_frame_path)
             
             # count number of files in output folder
             files_before = os.listdir(absolute_output_folder)
@@ -205,7 +218,13 @@ def run(
             setProgress(step / steps)
             setSeed(random.randint(0, 10000000000))
 
-            queue_prompt(json.dumps(workflow))
+            workflow_string = json.dumps(workflow)
+
+            # save to file
+            with open('./fbf_recent_workflow.json', "w") as f:
+                f.write(workflow_string)
+
+            queue_prompt(workflow_string)
 
             # wait until a file appears in comy output folder
             files_after = []
@@ -224,4 +243,9 @@ def run(
             time.sleep(1.5) 
 
             total_steps += 1
+
+            ip_adapter["inputs"]["weight"] = original_ip_weight # reset ip weight
+            canny_control_net_node["inputs"]["strength"] = original_canny_strength
+            k_sampler["inputs"]["cfg"] = original_cfg
+
 

@@ -10,7 +10,7 @@
   },
   "6": {
     "inputs": {
-      "text": "terminator woman, red eyes, glow, slight damage, scratches, metal, laser eyes, portrait",
+      "text": "robot head, digital information processing, leds,biomechanical, cyborg, human-machine fusion, solar punk, mouth slightly open, bright eyes, highly detailed\n",
       "clip": [
         "4",
         1
@@ -23,7 +23,7 @@
   },
   "7": {
     "inputs": {
-      "text": "ears, frame, text, blur",
+      "text": "ears, frame, text, blur, scary",
       "clip": [
         "4",
         1
@@ -65,7 +65,7 @@
   },
   "11": {
     "inputs": {
-      "conditioning_to_strength": 0,
+      "conditioning_to_strength": 1,
       "conditioning_to": [
         "6",
         0
@@ -82,7 +82,7 @@
   },
   "12": {
     "inputs": {
-      "text": "magical fairy, green skin, photorealistic, beautiful, friendly, forest druid",
+      "text": "beautiful islandic ghost, female, woman, tribal face painting,biomechanical, cyborg, human-machine fusion, solar punk, mouth slightly open, bright eyes, highly detailed",
       "clip": [
         "4",
         1
@@ -95,22 +95,22 @@
   },
   "14": {
     "inputs": {
-      "seed": 577523281920731,
-      "steps": 20,
-      "cfg": 7.0600000000000005,
+      "seed": 485072813673194,
+      "steps": 40,
+      "cfg": 1.86,
       "sampler_name": "euler",
       "scheduler": "normal",
-      "denoise": 0.9500000000000001,
+      "denoise": 0.97,
       "model": [
-        "91",
+        "108",
         0
       ],
       "positive": [
-        "29",
+        "111",
         0
       ],
       "negative": [
-        "29",
+        "111",
         1
       ],
       "latent_image": [
@@ -125,7 +125,7 @@
   },
   "21": {
     "inputs": {
-      "image": "f_00292_.png",
+      "image": "f_00533_.png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -140,42 +140,6 @@
     "class_type": "YANC.IntegerCaster",
     "_meta": {
       "title": "Integer Caster"
-    }
-  },
-  "29": {
-    "inputs": {
-      "strength": 0.25,
-      "start_percent": 0,
-      "end_percent": 1,
-      "positive": [
-        "72",
-        0
-      ],
-      "negative": [
-        "72",
-        1
-      ],
-      "control_net": [
-        "31",
-        0
-      ],
-      "image": [
-        "87",
-        0
-      ]
-    },
-    "class_type": "ControlNetApplyAdvanced",
-    "_meta": {
-      "title": "Apply ControlNet (Advanced)"
-    }
-  },
-  "31": {
-    "inputs": {
-      "control_net_name": "control-lora-sketch-rank256.safetensors"
-    },
-    "class_type": "ControlNetLoader",
-    "_meta": {
-      "title": "Load ControlNet Model"
     }
   },
   "37": {
@@ -219,18 +183,6 @@
       "title": "Image Resize And Crop Node"
     }
   },
-  "45": {
-    "inputs": {
-      "images": [
-        "87",
-        0
-      ]
-    },
-    "class_type": "PreviewImage",
-    "_meta": {
-      "title": "Preview Image"
-    }
-  },
   "67": {
     "inputs": {
       "control_net_name": "control-lora-depth-rank128.safetensors"
@@ -242,7 +194,7 @@
   },
   "72": {
     "inputs": {
-      "strength": 0.85,
+      "strength": 0.75,
       "start_percent": 0,
       "end_percent": 1,
       "positive": [
@@ -270,19 +222,7 @@
   "74": {
     "inputs": {
       "images": [
-        "92",
-        0
-      ]
-    },
-    "class_type": "PreviewImage",
-    "_meta": {
-      "title": "Preview Image"
-    }
-  },
-  "81": {
-    "inputs": {
-      "images": [
-        "21",
+        "41",
         0
       ]
     },
@@ -293,7 +233,7 @@
   },
   "82": {
     "inputs": {
-      "conditioning_to_strength": 0.53,
+      "conditioning_to_strength": 0,
       "conditioning_to": [
         "7",
         0
@@ -310,7 +250,7 @@
   },
   "83": {
     "inputs": {
-      "text": "ears, frame, text, blur",
+      "text": "ears, frame, text, blur, scary, painting",
       "clip": [
         "4",
         1
@@ -323,7 +263,7 @@
   },
   "84": {
     "inputs": {
-      "image": "head-depth-widened-125percent.png",
+      "image": "head-depth-widened-125percent-jawconnect.png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -331,97 +271,18 @@
       "title": "Load Image"
     }
   },
-  "87": {
-    "inputs": {
-      "image": [
-        "88",
-        0
-      ]
-    },
-    "class_type": "ImageInvert",
-    "_meta": {
-      "title": "Invert Image"
-    }
-  },
-  "88": {
-    "inputs": {
-      "low_threshold": 0.4,
-      "high_threshold": 0.8,
-      "image": [
-        "41",
-        0
-      ]
-    },
-    "class_type": "Canny",
-    "_meta": {
-      "title": "Canny"
-    }
-  },
-  "91": {
-    "inputs": {
-      "weight_style": 0.65,
-      "weight_composition": 0.6,
-      "expand_style": false,
-      "combine_embeds": "average",
-      "start_at": 0,
-      "end_at": 0.903,
-      "embeds_scaling": "V only",
-      "model": [
-        "4",
-        0
-      ],
-      "ipadapter": [
-        "37",
-        0
-      ],
-      "image_style": [
-        "92",
-        0
-      ],
-      "image_composition": [
-        "92",
-        0
-      ],
-      "clip_vision": [
-        "38",
-        0
-      ]
-    },
-    "class_type": "IPAdapterStyleComposition",
-    "_meta": {
-      "title": "IPAdapter Style & Composition SDXL"
-    }
-  },
-  "92": {
-    "inputs": {
-      "blend_factor": 0.8,
-      "blend_mode": "multiply",
-      "image1": [
-        "41",
-        0
-      ],
-      "image2": [
-        "93",
-        0
-      ]
-    },
-    "class_type": "ImageBlend",
-    "_meta": {
-      "title": "ImageBlend"
-    }
-  },
   "93": {
     "inputs": {
       "clamp": true,
-      "gamma": 1,
-      "contrast": 0.84,
-      "exposure": 0.05,
-      "offset": 0.15,
+      "gamma": 1.02,
+      "contrast": 0.91,
+      "exposure": 0.01,
+      "offset": 0.02,
       "hue": 0,
-      "saturation": 1,
+      "saturation": 0.78,
       "value": 1,
       "image": [
-        "84",
+        "104",
         0
       ]
     },
@@ -457,13 +318,165 @@
       "saturation": 1,
       "value": 1,
       "image": [
-        "92",
+        "93",
         0
       ]
     },
     "class_type": "Color Correct (mtb)",
     "_meta": {
       "title": "Color Correct (mtb)"
+    }
+  },
+  "97": {
+    "inputs": {
+      "images": [
+        "93",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "104": {
+    "inputs": {
+      "blend_factor": 0.35000000000000003,
+      "blend_mode": "multiply",
+      "image1": [
+        "41",
+        0
+      ],
+      "image2": [
+        "84",
+        0
+      ]
+    },
+    "class_type": "ImageBlend",
+    "_meta": {
+      "title": "ImageBlend"
+    }
+  },
+  "105": {
+    "inputs": {
+      "blend_factor": 1,
+      "blend_mode": "multiply",
+      "image1": [
+        "8",
+        0
+      ],
+      "image2": [
+        "84",
+        0
+      ]
+    },
+    "class_type": "ImageBlend",
+    "_meta": {
+      "title": "ImageBlend"
+    }
+  },
+  "106": {
+    "inputs": {
+      "images": [
+        "105",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "108": {
+    "inputs": {
+      "weight": 0.7000000000000001,
+      "weight_type": "linear",
+      "combine_embeds": "concat",
+      "start_at": 0,
+      "end_at": 1,
+      "embeds_scaling": "V only",
+      "model": [
+        "4",
+        0
+      ],
+      "ipadapter": [
+        "37",
+        0
+      ],
+      "image": [
+        "93",
+        0
+      ],
+      "clip_vision": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "IPAdapterAdvanced",
+    "_meta": {
+      "title": "IPAdapter Advanced"
+    }
+  },
+  "109": {
+    "inputs": {
+      "control_net_name": "control-lora-sketch-rank256.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "110": {
+    "inputs": {
+      "low_threshold": 0.4,
+      "high_threshold": 0.8,
+      "image": [
+        "41",
+        0
+      ]
+    },
+    "class_type": "Canny",
+    "_meta": {
+      "title": "Canny"
+    }
+  },
+  "111": {
+    "inputs": {
+      "strength": 0.7000000000000001,
+      "start_percent": 0,
+      "end_percent": 0.9500000000000001,
+      "positive": [
+        "72",
+        0
+      ],
+      "negative": [
+        "72",
+        1
+      ],
+      "control_net": [
+        "109",
+        0
+      ],
+      "image": [
+        "110",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet (Advanced)"
+    }
+  },
+  "112": {
+    "inputs": {
+      "images": [
+        "110",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
     }
   }
 }

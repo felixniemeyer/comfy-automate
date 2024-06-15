@@ -60,7 +60,7 @@ prompt_prefix = ""
 prompt_postfix = ",biomechanical, cyborg, human-machine fusion, solar punk, mouth slightly open, bright eyes, highly detailed"
 
 neg_prompt_prefix = "text, letters, watermark, blur, "
-neg_prompt_postfix = ", scary, painting"
+neg_prompt_postfix = ", painting"
 
 first_frame = '/home/felix/work/projects/fusion-visuals/4K/head-ai-video/head-depth-widened-125percent-jawconnect.png'
 

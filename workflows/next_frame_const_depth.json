@@ -97,7 +97,7 @@
     "inputs": {
       "seed": 485072813673194,
       "steps": 40,
-      "cfg": 1.86,
+      "cfg": 2.96,
       "sampler_name": "euler",
       "scheduler": "normal",
       "denoise": 0.97,
@@ -194,7 +194,7 @@
   },
   "72": {
     "inputs": {
-      "strength": 0.75,
+      "strength": 0.6,
       "start_percent": 0,
       "end_percent": 1,
       "positive": [
@@ -389,7 +389,7 @@
   },
   "108": {
     "inputs": {
-      "weight": 0.7000000000000001,
+      "weight": 0.55,
       "weight_type": "linear",
       "combine_embeds": "concat",
       "start_at": 0,
@@ -442,7 +442,7 @@
   },
   "111": {
     "inputs": {
-      "strength": 0.7000000000000001,
+      "strength": 0.55,
       "start_percent": 0,
       "end_percent": 0.9500000000000001,
       "positive": [

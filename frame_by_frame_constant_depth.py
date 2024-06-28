@@ -15,15 +15,14 @@ def run(
     output_folder_name, prompt_texts, fps, 
     prompt_prefix, prompt_postfix, 
     neg_prompt_prefix, neg_prompt_postfix,
+    depth_img_path, 
     ckpt=None, 
-    initial_image_path= "grey.png", 
     resolution=768, 
     first_frame_ip_weight = 0, 
     first_frame_canny_strength = 0,
-    first_frame_cfg = 7, 
     rotation_amount = 0
     ): 
-    workflow_file = "workflows/next_frame_const_depth.json"
+    workflow_file = "workflows/next_frame_const_depth_v2.json"
 
     comfy_path = os.path.expanduser('~/work/ai/ComfyUI')
     comfy_output_path = os.path.join(comfy_path, "output")
@@ -68,10 +67,11 @@ def run(
     gen_size = None
     k_sampler = None
     canny_control_net_node = None
+    depth_control_net_node = None
+    depth_img_loader = None
 
     original_ip_weight = None
     original_canny_strength = None
-    original_cfg = None
 
     with open(workflow_file) as f:
         workflow = json.load(f)
@@ -90,17 +90,17 @@ def run(
                 save_image = node
             if class_type == "KSampler": 
                 k_sampler = node
-                original_cfg = k_sampler["inputs"]["cfg"]
-                k_sampler["inputs"]["cfg"] = first_frame_cfg
 
                 canny_control_net_node = workflow[k_sampler["inputs"]["positive"][0]]
                 original_canny_strength = canny_control_net_node["inputs"]["strength"]
                 canny_control_net_node["inputs"]["strength"] = 0
 
                 # had 2 control nets, now just one xxx switched back to 2 (including canny)
-                control_net_node = workflow[canny_control_net_node["inputs"]["positive"][0]] 
-                conditioning_positive = workflow[control_net_node["inputs"]["positive"][0]]
-                conditioning_negative = workflow[control_net_node["inputs"]["negative"][0]]
+                depth_control_net_node = workflow[canny_control_net_node["inputs"]["positive"][0]] 
+                conditioning_positive = workflow[depth_control_net_node["inputs"]["positive"][0]]
+                conditioning_negative = workflow[depth_control_net_node["inputs"]["negative"][0]]
+
+                depth_img_loader = workflow[depth_control_net_node["inputs"]["image"][0]]
 
                 prompt_from_node = workflow[conditioning_positive["inputs"]["conditioning_from"][0]]
                 prompt_to_node = to_node_id = workflow[conditioning_positive["inputs"]["conditioning_to"][0]]
@@ -155,6 +155,9 @@ def run(
     if(ckpt != None):
         ckpt_loader["inputs"]["ckpt_name"] = ckpt
     image_loader["inputs"]["image"] = os.path.join(comfy_input_path, "previous_frame.png")
+
+    depth_img_loader["inputs"]["image"] = depth_img_path
+
     gen_size["inputs"]["value"] = resolution
     save_image["inputs"]["filename_prefix"] = output_folder_name + '/f'
 
@@ -183,7 +186,7 @@ def run(
     if not os.path.exists(absolute_output_folder):
         os.makedirs(absolute_output_folder)
 
-    previous_generation = initial_image_path
+    previous_generation = depth_img_path
 
     num_prompts = len(prompt_texts)
 
@@ -246,6 +249,3 @@ def run(
 
             ip_adapter["inputs"]["weight"] = original_ip_weight # reset ip weight
             canny_control_net_node["inputs"]["strength"] = original_canny_strength
-            k_sampler["inputs"]["cfg"] = original_cfg
-
-

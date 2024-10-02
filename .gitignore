@@ -1,0 +1,6 @@
+__pycache__/
+*.png
+*_recent_workflow.json
+nohup.out
+venv/
+weed_fbf.py

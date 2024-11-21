@@ -1,9 +1,9 @@
 {
   "6": {
     "inputs": {
-      "text": "fisheye lens photo, planets in space, stardust trails, aquarell painting",
+      "text": "planets in space, alien, stars, detailed, high contrast, fulldome",
       "clip": [
-        "116",
+        "117",
         1
       ]
     },
@@ -14,9 +14,9 @@
   },
   "7": {
     "inputs": {
-      "text": "",
+      "text": "text, watermark, face, blurred",
       "clip": [
-        "116",
+        "117",
         1
       ]
     },
@@ -56,14 +56,14 @@
   },
   "14": {
     "inputs": {
-      "seed": 985469185878015,
+      "seed": 789965192940456,
       "steps": 25,
       "cfg": 8,
       "sampler_name": "euler",
       "scheduler": "normal",
-      "denoise": 0.65,
+      "denoise": 0.4,
       "model": [
-        "115",
+        "117",
         0
       ],
       "positive": [
@@ -86,7 +86,7 @@
   },
   "21": {
     "inputs": {
-      "image": "forai-512-2_0166.png",
+      "image": "download (2).png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -101,24 +101,6 @@
     "class_type": "YANC.IntegerCaster",
     "_meta": {
       "title": "Integer Caster"
-    }
-  },
-  "37": {
-    "inputs": {
-      "ipadapter_file": "ip-adapter_sdxl.safetensors"
-    },
-    "class_type": "IPAdapterModelLoader",
-    "_meta": {
-      "title": "IPAdapter Model Loader"
-    }
-  },
-  "38": {
-    "inputs": {
-      "clip_name": "CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors"
-    },
-    "class_type": "CLIPVisionLoader",
-    "_meta": {
-      "title": "Load CLIP Vision"
     }
   },
   "41": {
@@ -144,18 +126,6 @@
       "title": "Image Resize And Crop Node"
     }
   },
-  "74": {
-    "inputs": {
-      "images": [
-        "41",
-        0
-      ]
-    },
-    "class_type": "PreviewImage",
-    "_meta": {
-      "title": "Preview Image"
-    }
-  },
   "94": {
     "inputs": {
       "pixels": [
@@ -172,41 +142,6 @@
       "title": "VAE Encode"
     }
   },
-  "115": {
-    "inputs": {
-      "weight_style": 0.15,
-      "weight_composition": 0.75,
-      "expand_style": false,
-      "combine_embeds": "average",
-      "start_at": 0,
-      "end_at": 1,
-      "embeds_scaling": "V only",
-      "model": [
-        "116",
-        0
-      ],
-      "ipadapter": [
-        "37",
-        0
-      ],
-      "image_style": [
-        "41",
-        0
-      ],
-      "image_composition": [
-        "41",
-        0
-      ],
-      "clip_vision": [
-        "38",
-        0
-      ]
-    },
-    "class_type": "IPAdapterStyleComposition",
-    "_meta": {
-      "title": "IPAdapter Style & Composition SDXL"
-    }
-  },
   "116": {
     "inputs": {
       "ckpt_name": "sd_xl_base_1.0.safetensors"
@@ -214,6 +149,25 @@
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
       "title": "Load Checkpoint"
+    }
+  },
+  "117": {
+    "inputs": {
+      "lora_name": "fulldome_v2.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "116",
+        0
+      ],
+      "clip": [
+        "116",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
     }
   }
 }

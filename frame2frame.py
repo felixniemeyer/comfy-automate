@@ -7,9 +7,10 @@ from common import queue_prompt
 
 import argparse
 
-def run(input_folder):
+def run(
     input_folder, 
-    workflow_file = "workflows/f2f.json"
+    workflow_file
+    ):
 
     # load next_fram_gen.json workflow and find relevant nodes
     save_image = None
@@ -22,9 +23,8 @@ def run(input_folder):
         for node_id in workflow:
             node = workflow[node_id]
             class_type = node["class_type"]
-            if class_type == "ImageResizeAndCropNode":
-                image_loader_id = node["inputs"]["image"][0]
-                image_loader = workflow[image_loader_id]
+            if class_type == "LoadImage":
+                image_loader = node
             if class_type == "SaveImage":
                 save_image = node
 
@@ -63,6 +63,7 @@ def run(input_folder):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Frame2Frame')
     parser.add_argument('input_folder', type=str, help='Input folder containing frames')
+    parser.add_argument('--workflow', '-w', type=str, default="workflows/f2f/default.json", help='Workflow file to use')
     args = parser.parse_args()
 
-    run(args.input_folder)
+    run(args.input_folder, args.workflow)

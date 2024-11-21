@@ -1,0 +1,173 @@
+{
+  "6": {
+    "inputs": {
+      "text": "planets in space, alien, space travel, rockets, technology, organic, stars, star sky, detailed, high contrast, fisheye, fulldome",
+      "clip": [
+        "117",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "text, watermark, face, blurred",
+      "clip": [
+        "117",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "14",
+        0
+      ],
+      "vae": [
+        "116",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "fusion/f",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "14": {
+    "inputs": {
+      "seed": 442396143510770,
+      "steps": 12,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 0.4,
+      "model": [
+        "117",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "94",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "21": {
+    "inputs": {
+      "image": "30deg2.png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "26": {
+    "inputs": {
+      "n": 1024
+    },
+    "class_type": "YANC.IntegerCaster",
+    "_meta": {
+      "title": "Integer Caster"
+    }
+  },
+  "41": {
+    "inputs": {
+      "width": [
+        "26",
+        0
+      ],
+      "height": [
+        "26",
+        0
+      ],
+      "alignment": "center",
+      "resampling": "lanczos",
+      "supersample": "false",
+      "image": [
+        "21",
+        0
+      ]
+    },
+    "class_type": "ImageResizeAndCropNode",
+    "_meta": {
+      "title": "Image Resize And Crop Node"
+    }
+  },
+  "94": {
+    "inputs": {
+      "pixels": [
+        "41",
+        0
+      ],
+      "vae": [
+        "116",
+        2
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "116": {
+    "inputs": {
+      "ckpt_name": "sd_xl_base_1.0.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "117": {
+    "inputs": {
+      "lora_name": "fulldome_v2.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "116",
+        0
+      ],
+      "clip": [
+        "116",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  }
+}

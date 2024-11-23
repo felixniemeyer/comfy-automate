@@ -14,11 +14,17 @@ import argparse
 
 import numpy as np
 from skimage.io import imread
+# from skimage.measure import block_reduce
+from skimage.metrics import structural_similarity as ssim
+
+# import imagehash
+# from PIL import Image
 
 class Frame:
-    def __init__(self, path, p):
+    def __init__(self, path, p): #, img_hash):
         self.path = path
         self.p = p
+        # self.img_hash = img_hash
 
 class Interpolator:
 
@@ -29,10 +35,12 @@ class Interpolator:
         prompt_from, 
         prompt_to,
         workflow_file, 
+        img_distance
         ):
 
         # load next_fram_gen.json workflow and find relevant nodes
         self.conditioning_average = None
+        self.img_distance = img_distance
 
         save_image = None
 
@@ -74,16 +82,17 @@ class Interpolator:
         save_image["inputs"]["filename_prefix"] = f"{subfolder}/{i}/f"
 
     runned = False
-    def run(self, frame_count):
-        if(frame_count < 3):
-            raise Exception("frame_count must be at least 3")
+    def run(self, frame_count, gap_size, append_p):
+        if(frame_count < 2):
+            raise Exception("frame_count must be at least 2")
         if self.runned:
             raise Exception("run can only be called once")
         self.runned = True
 
         self.initialize_tree()
 
-        for frame_id in range(frame_count - 3):
+        frame_id = 0 
+        while frame_id < frame_count - 2:
             # find largest gap
             largest_gap_size = 0
             largest_gap_id = 0
@@ -92,8 +101,17 @@ class Interpolator:
                     largest_gap_size = self.gaps[i]
                     largest_gap_id = i
 
+            if largest_gap_size < gap_size:
+                print('reached gap target, stopping')
+                break
+
             left_frame = self.frames[largest_gap_id]
             right_frame = self.frames[largest_gap_id + 1]
+
+            if right_frame.p - left_frame.p < 0.001:
+                print('p to low, ignoring this gap')
+                self.gaps[largest_gap_id] = 0
+                continue
 
             p = 0.5 * (left_frame.p + right_frame.p)
 
@@ -108,25 +126,27 @@ class Interpolator:
             self.gaps[largest_gap_id] = gap_left
             self.gaps.insert(largest_gap_id + 1, gap_right)
 
-            print('updated gaps', self.gaps)
+            print('updated gaps', [round(g, 3) for g in self.gaps])
+
+            frame_id += 1
 
         # rename all files to be in order
         for i in range(len(self.frames)):
             frame = self.frames[i]
-            new_path = os.path.join(self.output_folder, f"{i:05}.png")
+            filename = f"{i:05}"
+            if append_p:
+                filename += '-' + str(frame.p)
+            new_path = os.path.join(self.output_folder, f"{filename}.png")
             os.rename(frame.path, new_path)
             frame.path = new_path
 
     def initialize_tree(self):
-        # run workflow for conditioning_to_strength 0, 0.5, 1 
         self.frames = [
             self.get_frame_at(0.0), 
-            self.get_frame_at(0.5), 
             self.get_frame_at(1.0)
         ]
         self.gaps = [
-            self.img_distance(self.frames[0], self.frames[1]),
-            self.img_distance(self.frames[1], self.frames[2])
+            self.img_distance(self.frames[0], self.frames[1])
         ]
     
     out_id = 1
@@ -151,20 +171,45 @@ class Interpolator:
         while not os.path.exists(expected_filepath):
             time.sleep(0.5)
 
+        # wait for file to be written
+        time.sleep(1)
+
+        # load image and get hash
+        # img = imread(expected_filepath)
+        # img_pil = Image.fromarray(img)
+        # img_hash = imagehash.average_hash(img_pil, hash_size=32)
+
+        # load image and create thumbnail for comparison
+        img = imread(expected_filepath)
+        img = img[::4, ::4]
+
         return Frame(
             expected_filepath, 
-            p
+            p, 
+            #    img_hash
         )
 
-    def img_distance(self, frame1, frame2):
-        # calculate Mean Squared Error 
-        img1 = imread(frame1.path)
-        img2 = imread(frame2.path)
+def mse_img_distance(frame1, frame2):
+    # calculate Mean Squared Error 
+    img1 = imread(frame1.path)
+    img2 = imread(frame2.path)
 
-        # Calculate MSE across all channels
-        distance = np.mean((img1 - img2) ** 2)
+    # Calculate MSE across all channels
+    distance = np.mean((img1 - img2) ** 2)
 
-        return distance.item()
+    return distance.item()
+
+def hamming_img_distance(frame1, frame2):
+    # calculate Hamming distance
+    return frame1.img_hash - frame2.img_hash
+
+def ssim_img_distance(frame1, frame2):
+    # calculate SSIM
+    img1 = imread(frame1.path)
+    img2 = imread(frame2.path)
+
+    similarity = ssim(img1, img2, channel_axis=2)
+    return 1 - similarity.item()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='bintree prompt travel generates frames from one prompt to another always filling the gaps with the largest distance')
@@ -176,7 +221,10 @@ if __name__ == "__main__":
     parser.add_argument('--out_path', '-p', type=str, help='folder within comfy output folder', default="bininterp")
     parser.add_argument('--workflow', '-w', type=str, default="workflows/bintree_prompt_interp/v0.json", help='Workflow file to use')
 
-    parser.add_argument('--frame_count', '-n', type=int, default=10, help='Number of frames to generate')
+    parser.add_argument('--frame_count', '-n', type=int, default=10, help='Max number of frames to generate')
+    parser.add_argument('--gap_size', '-g', type=float, default=0.05, help='Stop when no gap exceeds this size')
+
+    parser.add_argument('--append_p', action='store_true', help='Append p values in file name', default=True)
 
     args = parser.parse_args()
 
@@ -186,7 +234,12 @@ if __name__ == "__main__":
         args.prompt_from,
         args.prompt_to,
         args.workflow,
+        ssim_img_distance, 
     )
 
-    interp.run(args.frame_count)
+    interp.run(
+        args.frame_count,
+        args.gap_size, 
+        args.append_p
+    )
 

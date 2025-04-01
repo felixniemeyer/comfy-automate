@@ -5,6 +5,7 @@ It generates that frame that halfs the biggest gap.
 
 import os
 import time
+import math
 
 import json
 
@@ -31,11 +32,11 @@ class Interpolator:
     def __init__(
         self,
         subfolder,
-        comfy_output_folder,
+        comfy_out_abs_path,
         prompt_from, 
         prompt_to,
         workflow_file, 
-        img_distance
+        img_distance, 
         ):
 
         # load next_fram_gen.json workflow and find relevant nodes
@@ -66,30 +67,36 @@ class Interpolator:
             raise Exception("Could not find SaveImage in workflow", workflow_file)
 
         # get absolute path of output folder
-        output_folder = os.path.abspath(comfy_output_folder)
-        output_folder = os.path.join(output_folder, subfolder)
+        self.output_folder = os.path.join(comfy_out_abs_path, subfolder)
 
-        # get absolute output path
-        i = 0
-        ok = False
-        while not ok:
-            self.output_folder = os.path.join(output_folder, str(i))
-            if os.path.exists(self.output_folder):
-                i += 1
-            else:
-                ok = True
-
-        save_image["inputs"]["filename_prefix"] = f"{subfolder}/{i}/f"
+        save_image["inputs"]["filename_prefix"] = f"{subfolder}/f"
 
     runned = False
-    def run(self, frame_count, gap_size, append_p):
+    def run(
+        self, 
+        frame_count, 
+        gap_size, 
+        append_p, 
+        filename_prefix="",
+        first_frame=None):
         if(frame_count < 2):
             raise Exception("frame_count must be at least 2")
         if self.runned:
             raise Exception("run can only be called once")
         self.runned = True
 
-        self.initialize_tree()
+        self.out_id = 1
+        if first_frame != None:
+            self.frames = [first_frame]
+        else:
+            self.frames = [self.get_frame_at(0.0)]
+
+        last_frame = self.get_frame_at(1.0)
+        self.frames.append(last_frame)
+
+        self.gaps = [
+            self.img_distance(self.frames[0], self.frames[1])
+        ]
 
         frame_id = 0 
         while frame_id < frame_count - 2:
@@ -133,22 +140,15 @@ class Interpolator:
         # rename all files to be in order
         for i in range(len(self.frames)):
             frame = self.frames[i]
-            filename = f"{i:05}"
+            filename = f"{filename_prefix}{i:05}"
             if append_p:
                 filename += '-' + str(frame.p)
             new_path = os.path.join(self.output_folder, f"{filename}.png")
             os.rename(frame.path, new_path)
             frame.path = new_path
 
-    def initialize_tree(self):
-        self.frames = [
-            self.get_frame_at(0.0), 
-            self.get_frame_at(1.0)
-        ]
-        self.gaps = [
-            self.img_distance(self.frames[0], self.frames[1])
-        ]
-    
+        return last_frame
+
     out_id = 1
     def get_frame_at(self, p):
         print(f"generating frame at {p}")
@@ -214,11 +214,9 @@ def ssim_img_distance(frame1, frame2):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='bintree prompt travel generates frames from one prompt to another always filling the gaps with the largest distance')
 
-    parser.add_argument('prompt_from', type=str, help='Prompt from')
-    parser.add_argument('prompt_to', type=str, help='Prompt to')
-
-    parser.add_argument('comfy_output_folder', type=str, help='Comfy output folder')
     parser.add_argument('--out_path', '-p', type=str, help='folder within comfy output folder', default="bininterp")
+    parser.add_argument('--run_name', '-r', type=str, help='run name, default auto increment', default=None)
+
     parser.add_argument('--workflow', '-w', type=str, default="workflows/bintree_prompt_interp/v0.json", help='Workflow file to use')
 
     parser.add_argument('--frame_count', '-n', type=int, default=10, help='Max number of frames to generate')
@@ -226,20 +224,51 @@ if __name__ == "__main__":
 
     parser.add_argument('--append_p', action='store_true', help='Append p values in file name', default=True)
 
+    parser.add_argument('comfy_output_folder', type=str, help='Comfy output folder')
+
+    parser.add_argument('prompts', type=str, nargs='+', help='Prompts to interpolate between')
+
     args = parser.parse_args()
 
-    interp = Interpolator(
-        args.out_path,
-        args.comfy_output_folder,
-        args.prompt_from,
-        args.prompt_to,
-        args.workflow,
-        ssim_img_distance, 
-    )
+    # stick together path
+    comfy_out_abs_path = os.path.abspath(args.comfy_output_folder)
+    bininterp_folder = os.path.join(comfy_out_abs_path, args.out_path)
+    if args.run_name is not None:
+        run_folder = os.path.join(bininterp_folder, args.run_name)
+    else: 
+        i = 0
+        ok = False
+        while not ok:
+            run_folder = os.path.join(bininterp_folder, f"{i}") 
+            if not os.path.exists(run_folder):
+                ok = True
+            else:
+                i += 1
 
-    interp.run(
-        args.frame_count,
-        args.gap_size, 
-        args.append_p
-    )
+    interpolations = len(args.prompts) - 1
+
+    print(f"running {interpolations} interpolations")
+
+    padding = math.floor(math.log10(interpolations))
+    last_frame = None
+    for i in range(interpolations):
+        print(f"interpolating between {args.prompts[i]} and {args.prompts[i + 1]}")
+        interp = Interpolator(
+            run_folder,
+            args.comfy_output_folder,
+            args.prompts[i],
+            args.prompts[i + 1],
+            args.workflow,
+            ssim_img_distance, 
+        )
+
+        last_frame = interp.run(
+            args.frame_count,
+            args.gap_size, 
+            args.append_p, 
+            f"{i:0{padding}}-",
+            first_frame = last_frame
+        )
+
+        last_frame.p = 0.0
 

@@ -82,7 +82,7 @@
     "inputs": {
       "scheduler": "simple",
       "steps": 15,
-      "denoise": 0.8300000000000001,
+      "denoise": 0.5,
       "model": [
         "30",
         0
@@ -111,7 +111,7 @@
   },
   "25": {
     "inputs": {
-      "noise_seed": 195345405044251
+      "noise_seed": 526923242170943
     },
     "class_type": "RandomNoise",
     "_meta": {

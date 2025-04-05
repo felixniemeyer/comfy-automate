@@ -88,6 +88,7 @@ class Img2ImgTransformer:
         comfy_output_folder: str, 
         out_sub_path: str,
         keyframes: list[KeyFrame],
+        skip: int = 0,
     ):
         
         if(len(keyframes) < 1):
@@ -115,11 +116,14 @@ class Img2ImgTransformer:
         # go through all images
         for i in range(len(image_list)):
 
+            if skip > 0 and i % skip != 0:
+                print('skipping frame', i)
+                continue
+            
             # make abs path
             image_path = os.path.join(image_in_folder, image_list[i])
             self.image_loader["inputs"]["image"] = image_path
-            self.updatePrompts(keyframes, frame)
-            frame += 1
+            self.updatePrompts(keyframes, i)
             
             workflow_string = json.dumps(self.workflow)
 
@@ -129,18 +133,16 @@ class Img2ImgTransformer:
 
             queue_prompt(workflow_string)
 
-            # debug, stop after 2
-            # if frame > 1: 
-            #     break
-
             # wait for file to appear
-            while i - out_file_count > max_queue_size - 2:
+            while frame - out_file_count > max_queue_size - 2:
                 print('waiting for jobs to finish')
                 out_file_count = len(os.listdir(abs_output_folder))
                 time.sleep(5)
 
             # wait for file to be written
             time.sleep(1)
+
+            frame += 1
             
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='transforms vids frame by frame')
@@ -153,12 +155,14 @@ if __name__ == "__main__":
 
     # workflow file
     parser.add_argument('--workflow', '-w', type=str, default="workflows/vid2vid_fbf/v0.json", help='Workflow file to use for each image')
+    
+    parser.add_argument('--skip', '-s', type=int, default=0, help='skip frames')
 
     # TODO: allow specifying prompts per keyframe
     # parser.add_argument('--prompts', type=str, nargs='+', help='Prompts to interpolate between')
     # hardcode for now
     keyframes = [
-        KeyFrame("a house full of cats and gongs", 0),
+        KeyFrame("cyberspace beach and spanish nature with cute and cool and powerful aliens. nice colors and suprising perspective and composition. it's an masterpiece of an artwork.", 0),
     ]
 
     args = parser.parse_args()
@@ -169,7 +173,8 @@ if __name__ == "__main__":
         args.image_in_folder,
         args.comfy_output_folder,
         args.out_sub_path,
-        keyframes
+        keyframes, 
+        skip=args.skip,
     )
 
     #interpolations = len(args.prompts) - 1

@@ -9,6 +9,8 @@ import cv2
 import torch 
 import torch.nn.functional as F
 
+import numpy as np
+
 import json
 
 from common import queue_prompt
@@ -122,7 +124,9 @@ class Img2ImgTransformer:
         if self.image_loader_node == None:
             raise Exception("Could not find ImageLoader in workflow", workflow_file)
 
-        self.random_noise_node["inputs"]["noise_seed"] = 1337
+        self.random_noise_node["inputs"]["noise_seed"] = (1337 - 30) * 10000 + 1993
+
+        self.clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     
         
     def setBothPromptsTo(self, prompt: str):
@@ -199,8 +203,9 @@ class Img2ImgTransformer:
 
             if previous_file == None or current_strip != previous_strip:
                 print(f"Cut detected at {image_name}")
-                self.basic_scheduler_node['inputs']['denoise'] = 0.78
-                self.basic_scheduler_node['inputs']['steps'] = 15
+                denoise = 0.8
+                self.basic_scheduler_node['inputs']['denoise'] = denoise
+                self.basic_scheduler_node['inputs']['steps'] = int(19 * denoise + 1)
                 input_path = image_path
                 print('switching to next prompt:', prompts[prompt_index])
                 self.setBothPromptsTo(prompts[prompt_index])
@@ -213,20 +218,37 @@ class Img2ImgTransformer:
 
                 previous_frame = cv2.imread(previous_file)
                 previous_frame = cv2.cvtColor(previous_frame, cv2.COLOR_BGR2RGB)
-                print(previous_frame.shape, image.shape)
                 previous_frame = cv2.resize(previous_frame, (image.shape[3], image.shape[2]), interpolation=cv2.INTER_LINEAR)
-                print(previous_frame.shape)
+
+                # Increase contrast
+                # # Convert to LAB color space
+                lab = cv2.cvtColor(previous_frame, cv2.COLOR_RGB2LAB)
+
+
+                # # Split channels
+                l, a, b = cv2.split(lab)
+
+                # cl = cv2.equalizeHist(l)
+                # Apply CLAHE to the L channel
+                cl = self.clahe.apply(l)
+
+                # # Merge and convert back to BGR
+                limg = cv2.merge((cl, a, b))
+                contrast_frame = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
+
+                # lift contrast a little
+                previous_frame = contrast_frame * 0.17 + previous_frame * 0.83
+
                 previous_frame = torch.tensor(previous_frame, dtype=torch.float32).permute(2, 0, 1)
                 previous_frame = previous_frame[None]
 
                 # load flow image
                 flow_path = os.path.join(image_in_folder, "flows", f"{i:05d}.pt")
                 flow = torch.load(flow_path, map_location='cpu')
-                print('flow shape', flow.shape)
 
                 # combine images
                 warped_image = warp_image(previous_frame, flow)
-
+                
                 # blend warped with actual image
                 # flow is uv values
                 # calculate the average length of the uv vector for every
@@ -236,24 +258,32 @@ class Img2ImgTransformer:
                 average_length = average_length.item()
                 print('avg flow length', average_length)
 
-                image_weight = (1 - 1 / (average_length * 0.25 + 1)) * 0.1
+                image_weight = min(average_length, 50) / 50 * 0.15 + 0.05
                 image = image * image_weight + warped_image * (1.0 - image_weight)
 
                 # save image 
                 image = cv2.cvtColor(image[0].permute(1, 2, 0).cpu().numpy(), cv2.COLOR_RGB2BGR)
+                
+                # sharpen
+                kernel = np.array([[0, -0.1, 0], [-0.1, 1.4, -0.1], [0, -0.1, 0]])
+                # apply kernel
+                image = cv2.filter2D(image, -1, kernel)
+                # add noise
+                noise = np.random.normal(0, 0.05, image.shape)
+                image = image + noise
+                
                 cv2.imwrite(
                     temp_image_file, 
                     image
                 )
 
-                denoise = 0.4 # (1 - 1 / (average_length * 0.25 + 1)) * 0.25 + 0.3
+                denoise = min(average_length, 50) / 50 * 0.2 + 0.35
                 self.basic_scheduler_node['inputs']['denoise'] = denoise
-                self.basic_scheduler_node['inputs']['steps'] = int((18 * denoise) + 1)
+                self.basic_scheduler_node['inputs']['steps'] = int(19 * denoise + 1)
                 input_path = temp_image_file
-                
-            
-            self.random_noise_node["inputs"]["noise_seed"] += 1
+
             self.image_loader_node["inputs"]["image"] = input_path
+            self.random_noise_node["inputs"]["noise_seed"] += 10
             
             workflow_string = json.dumps(self.workflow)
 
@@ -307,7 +337,8 @@ if __name__ == "__main__":
         prompts.reverse()
         # append general prompt to every prompt
         for i in range(len(prompts)):
-            prompts[i] += ". artificial superintelligence has arrived on earth and is merging with nature. cyborgs, cables and silicon chips intertwined with beautiful nature. photorealistic masterpiece."
+            prompts[i] += ". artificial superintelligence has arrived on earth and is merging with nature. cyborgs, cables and silicon chips intertwined with beautiful nature. photorealistic, masterpiece."
+            prompts[i] += "sharp focus, highly detailed, antialiased, smooth transitions, cinematic lighting, 8K resolution"
         print(prompts)
     
     args.temp_img_file = os.path.abspath(args.temp_img_file)
